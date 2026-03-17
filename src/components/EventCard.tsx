@@ -90,6 +90,8 @@ const EventCard = forwardRef<HTMLAnchorElement, EventCardProps>(({ id, title, da
       </motion.div>
     </Link>
   );
-};
+});
+
+EventCard.displayName = "EventCard";
 
 export default EventCard;
