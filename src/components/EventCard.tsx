@@ -26,7 +26,7 @@ const EventCard = forwardRef<HTMLAnchorElement, EventCardProps>(({ id, title, da
   const ticketsLeft = capacity - attendees;
 
   return (
-    <Link to={`/event/${id}`}>
+    <Link to={`/event/${id}`} ref={ref}>
       <motion.div
         whileHover={{ y: -4 }}
         transition={{ type: "spring", stiffness: 260, damping: 20 }}
