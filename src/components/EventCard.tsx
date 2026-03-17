@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Users } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -20,12 +21,12 @@ const statusConfig = {
   "sold-out": { label: "SOLD OUT", className: "bg-destructive text-destructive-foreground" },
 };
 
-const EventCard = ({ id, title, date, location, attendees, capacity, image, status, category }: EventCardProps) => {
+const EventCard = forwardRef<HTMLAnchorElement, EventCardProps>(({ id, title, date, location, attendees, capacity, image, status, category }, ref) => {
   const statusInfo = statusConfig[status];
   const ticketsLeft = capacity - attendees;
 
   return (
-    <Link to={`/event/${id}`}>
+    <Link to={`/event/${id}`} ref={ref}>
       <motion.div
         whileHover={{ y: -4 }}
         transition={{ type: "spring", stiffness: 260, damping: 20 }}
@@ -89,6 +90,8 @@ const EventCard = ({ id, title, date, location, attendees, capacity, image, stat
       </motion.div>
     </Link>
   );
-};
+});
+
+EventCard.displayName = "EventCard";
 
 export default EventCard;
