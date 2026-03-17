@@ -1,14 +1,45 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Calendar, Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Calendar, Mail, Lock, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const AuthPage = () => {
   const { mode } = useParams<{ mode: string }>();
   const isLogin = mode !== "signup";
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { signIn, signUp } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        const { error } = await signIn(email, password);
+        if (error) throw error;
+        toast({ title: "Welcome back!", description: "You've signed in successfully." });
+        navigate("/dashboard");
+      } else {
+        const { error } = await signUp(email, password, fullName);
+        if (error) throw error;
+        toast({ title: "Account created!", description: "Check your email to confirm your account." });
+      }
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -61,18 +92,30 @@ const AuthPage = () => {
             </p>
           </div>
 
-          <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-4" onSubmit={handleSubmit}>
             {!isLogin && (
               <div className="space-y-1.5">
                 <label className="text-xs font-medium">Full Name</label>
-                <Input placeholder="John Doe" className="h-10" />
+                <Input
+                  placeholder="John Doe"
+                  className="h-10"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                />
               </div>
             )}
             <div className="space-y-1.5">
               <label className="text-xs font-medium">Email</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="you@example.com" className="pl-9 h-10" />
+                <Input
+                  placeholder="you@example.com"
+                  className="pl-9 h-10"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
               </div>
             </div>
             <div className="space-y-1.5">
@@ -83,6 +126,10 @@ const AuthPage = () => {
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   className="pl-9 pr-9 h-10"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
                 />
                 <button
                   type="button"
@@ -94,9 +141,15 @@ const AuthPage = () => {
               </div>
             </div>
 
-            <Button type="submit" className="w-full h-10 active-press gap-2">
-              {isLogin ? "Sign In" : "Create Account"}
-              <ArrowRight className="h-4 w-4" />
+            <Button type="submit" className="w-full h-10 active-press gap-2" disabled={loading}>
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  {isLogin ? "Sign In" : "Create Account"}
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
             </Button>
           </form>
 
