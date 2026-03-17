@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Users } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -20,7 +21,7 @@ const statusConfig = {
   "sold-out": { label: "SOLD OUT", className: "bg-destructive text-destructive-foreground" },
 };
 
-const EventCard = ({ id, title, date, location, attendees, capacity, image, status, category }: EventCardProps) => {
+const EventCard = forwardRef<HTMLAnchorElement, EventCardProps>(({ id, title, date, location, attendees, capacity, image, status, category }, ref) => {
   const statusInfo = statusConfig[status];
   const ticketsLeft = capacity - attendees;
 
