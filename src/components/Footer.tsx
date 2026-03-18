@@ -1,5 +1,4 @@
 import { forwardRef } from "react";
-import { Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Footer = forwardRef<HTMLElement>((_, ref) => (
@@ -8,9 +7,7 @@ const Footer = forwardRef<HTMLElement>((_, ref) => (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
         <div>
           <Link to="/" className="flex items-center gap-2 mb-3">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary">
-              <Calendar className="h-3.5 w-3.5 text-primary-foreground" />
-            </div>
+            <img src="/logo.png" alt="EventSphere Logo" className="h-7 w-7 rounded-lg object-contain" />
             <span className="text-sm font-semibold tracking-tight">EventSphere</span>
           </Link>
           <p className="text-xs text-muted-foreground leading-relaxed">

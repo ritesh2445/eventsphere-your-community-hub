@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Calendar, Menu, X, LogOut, User } from "lucide-react";
+import { Menu, X, LogOut, User } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -51,9 +51,7 @@ const Navbar = () => {
     >
       <div className="container flex h-14 items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Calendar className="h-4 w-4 text-primary-foreground" />
-          </div>
+          <img src="/logo.png" alt="EventSphere Logo" className="h-8 w-8 rounded-lg object-contain" />
           <span className="text-sm font-semibold tracking-tight">EventSphere</span>
         </Link>
 
