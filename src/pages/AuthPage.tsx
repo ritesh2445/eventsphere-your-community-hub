@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Calendar, Mail, Lock, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Calendar, Mail, Lock, ArrowRight, Eye, EyeOff, Loader2, User, Building2 } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ const AuthPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [selectedRole, setSelectedRole] = useState<"attendee" | "organizer">("attendee");
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
@@ -30,7 +31,7 @@ const AuthPage = () => {
         toast({ title: "Welcome back!", description: "You've signed in successfully." });
         navigate("/dashboard");
       } else {
-        const { error } = await signUp(email, password, fullName);
+        const { error } = await signUp(email, password, selectedRole, fullName);
         if (error) throw error;
         toast({ title: "Account created!", description: "Check your email to confirm your account." });
       }
@@ -102,6 +103,37 @@ const AuthPage = () => {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                 />
+              </div>
+            )}
+            {!isLogin && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium">I am an</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRole("attendee")}
+                    className={`h-11 rounded-md border text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
+                      selectedRole === "attendee" 
+                        ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20" 
+                        : "bg-background border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <User className="h-4 w-4" />
+                    Attendee
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRole("organizer")}
+                    className={`h-11 rounded-md border text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
+                      selectedRole === "organizer" 
+                        ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20" 
+                        : "bg-background border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <Building2 className="h-4 w-4" />
+                    Organizer
+                  </button>
+                </div>
               </div>
             )}
             <div className="space-y-1.5">

@@ -137,4 +137,50 @@
   .active-press {
     @apply transition-transform active:scale-[0.98];
   }
+
+  /* Hide scrollbar but keep scrolling - for horizontal tabs */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Mobile-first enhancements */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* Safe-area insets for notched phones (iPhone X+) */
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Make sure dialogs don't overflow on small viewports */
+@media (max-width: 640px) {
+  [role="dialog"] {
+    max-height: 95vh !important;
+    max-width: 95vw !important;
+    margin: 0.5rem;
+  }
+}
+
+/* Ensure images don't break layout */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Better touch targets on mobile */
+@media (pointer: coarse) {
+  button, a, [role="button"] {
+    min-height: 36px;
+  }
 }

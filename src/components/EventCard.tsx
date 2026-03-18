@@ -1,7 +1,6 @@
-import { forwardRef } from "react";
-import { motion } from "framer-motion";
-import { Calendar, MapPin, Users } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Calendar, MapPin, Users } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface EventCardProps {
   id: string;
@@ -11,78 +10,77 @@ interface EventCardProps {
   attendees: number;
   capacity: number;
   image: string;
-  status: "live" | "upcoming" | "sold-out";
   category: string;
+  status: "live" | "upcoming" | "sold-out" | "pending";
 }
 
-const statusConfig = {
-  live: { label: "LIVE", className: "bg-success text-success-foreground" },
-  upcoming: { label: "UPCOMING", className: "bg-primary text-primary-foreground" },
-  "sold-out": { label: "SOLD OUT", className: "bg-destructive text-destructive-foreground" },
-};
-
-const EventCard = forwardRef<HTMLAnchorElement, EventCardProps>(({ id, title, date, location, attendees, capacity, image, status, category }, ref) => {
-  const statusInfo = statusConfig[status];
-  const ticketsLeft = capacity - attendees;
-
+const EventCard = ({
+  id,
+  title,
+  date,
+  location,
+  attendees,
+  capacity,
+  image,
+  category,
+  status,
+}: EventCardProps) => {
   return (
-    <Link to={`/event/${id}`} ref={ref}>
+    <Link to={`/event/${id}`}>
       <motion.div
         whileHover={{ y: -4 }}
-        transition={{ type: "spring", stiffness: 260, damping: 20 }}
-        className="group relative overflow-hidden rounded-xl border border-border bg-card active-press"
+        className="group relative overflow-hidden rounded-2xl border border-border bg-card transition-all hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5"
       >
-        <div className="relative aspect-[16/10] overflow-hidden">
+        <div className="aspect-[16/9] overflow-hidden bg-muted">
           <img
             src={image}
             alt={title}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-card/90 via-transparent to-transparent" />
-          <div className="absolute top-3 right-3 flex gap-2">
-            <span className={`rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider font-mono-data ${statusInfo.className}`}>
-              {statusInfo.label}
-            </span>
-          </div>
-          {status !== "sold-out" && (
-            <div className="absolute top-3 left-3">
-              <span className="rounded-md bg-background/80 backdrop-blur-sm px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground font-mono-data">
-                {ticketsLeft} left
-              </span>
-            </div>
-          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
 
-        <div className="p-4 space-y-3">
-          <div>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+        <div className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-primary px-2 py-0.5 rounded bg-primary/10">
               {category}
             </span>
-            <h3 className="mt-1 text-sm font-semibold tracking-tight line-clamp-1">
-              {title}
-            </h3>
-          </div>
-
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1 font-mono-data">
-              <Calendar className="h-3 w-3" />
-              {date}
-            </span>
-            <span className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" />
-              {location}
+            <span className={`rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+              status === "live"
+                ? "bg-success/10 text-success"
+                : status === "sold-out"
+                ? "bg-destructive/10 text-destructive"
+                : status === "pending"
+                ? "bg-warning/10 text-warning"
+                : "bg-secondary text-muted-foreground"
+            }`}>
+              {status}
             </span>
           </div>
 
-          <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Users className="h-3 w-3" />
-              <span className="font-mono-data">{attendees}</span> attending
-            </span>
-            <div className="h-1 w-20 rounded-full bg-secondary overflow-hidden">
-              <div
-                className="h-full rounded-full bg-primary transition-all"
-                style={{ width: `${(attendees / capacity) * 100}%` }}
+          <h3 className="text-sm font-semibold group-hover:text-primary transition-colors line-clamp-1">{title}</h3>
+          
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <Calendar className="h-3.5 w-3.5" />
+              <span>{date}</span>
+            </div>
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <MapPin className="h-3.5 w-3.5" />
+              <span className="line-clamp-1">{location}</span>
+            </div>
+          </div>
+
+          <div className="space-y-1.5 pt-2">
+            <div className="flex items-center justify-between text-[10px] font-medium text-muted-foreground">
+              <span>{attendees}/{capacity} Joined</span>
+              <span>{capacity > 0 ? Math.round((attendees / capacity) * 100) : 0}%</span>
+            </div>
+            <div className="h-1 w-full bg-secondary rounded-full overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${(attendees / capacity) * 100}%` }}
+                className={`h-full ${status === "sold-out" ? "bg-destructive" : "bg-primary"}`}
               />
             </div>
           </div>
@@ -90,8 +88,6 @@ const EventCard = forwardRef<HTMLAnchorElement, EventCardProps>(({ id, title, da
       </motion.div>
     </Link>
   );
-});
-
-EventCard.displayName = "EventCard";
+};
 
 export default EventCard;

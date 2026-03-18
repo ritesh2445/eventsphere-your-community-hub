@@ -1,22 +1,46 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Filter } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import EventCard from "@/components/EventCard";
-import { mockEvents, categories } from "@/lib/mockData";
+import { getEvents, Event } from "@/lib/store";
 
-const Explore = () => {
+const EventsPage = () => {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = mockEvents.filter((e) => {
-    const matchesSearch = e.title.toLowerCase().includes(search.toLowerCase());
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setLoading(true);
+      try {
+        const allEvents = await getEvents();
+        // Visible events (not pending)
+        const visible = allEvents.filter(e => e.status !== "pending");
+        setEvents(visible);
+      } catch (error) {
+        console.error("Events fetch error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchEvents();
+  }, []);
+
+  const PRESET_CATEGORIES = ["Technology", "Business", "Design", "Marketing", "Social"];
+  const availableCategories = ["All", ...PRESET_CATEGORIES.filter(cat => events.some(e => e.category === cat))];
+
+  const filtered = (events || []).filter((e) => {
+    const matchesSearch = (e.title || "").toLowerCase().includes(search.toLowerCase());
     const matchesCategory = activeCategory === "All" || e.category === activeCategory;
     return matchesSearch && matchesCategory;
   });
+
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -29,9 +53,9 @@ const Explore = () => {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-1"
           >
-            <h1 className="text-2xl font-bold tracking-tight">Explore Events</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Available Events</h1>
             <p className="text-sm text-muted-foreground">
-              Discover events tailored to your interests
+              Discover experiences tailored to your interests
             </p>
           </motion.div>
 
@@ -51,13 +75,13 @@ const Explore = () => {
                 className="pl-9 h-9 text-sm"
               />
             </div>
-            <div className="flex items-center gap-1 overflow-x-auto">
-              {categories.map((cat) => (
+            <div className="flex items-center gap-1 overflow-x-auto pb-2 scrollbar-none">
+              {availableCategories.map((cat) => (
                 <Button
                   key={cat}
                   variant={activeCategory === cat ? "default" : "outline"}
                   size="sm"
-                  className="h-8 text-xs shrink-0 active-press"
+                  className="h-8 text-xs shrink-0 active-press rounded-full px-4"
                   onClick={() => setActiveCategory(cat)}
                 >
                   {cat}
@@ -67,20 +91,26 @@ const Explore = () => {
           </motion.div>
 
           {/* Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((event, i) => (
-              <motion.div
-                key={event.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-              >
-                <EventCard {...event} />
-              </motion.div>
-            ))}
-          </div>
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary/40" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filtered.map((event, i) => (
+                <motion.div
+                  key={event.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                >
+                  <EventCard {...event} />
+                </motion.div>
+              ))}
+            </div>
+          )}
 
-          {filtered.length === 0 && (
+          {!loading && filtered.length === 0 && (
             <div className="text-center py-20">
               <p className="text-sm text-muted-foreground">
                 No events found. Try adjusting your search or filters.
@@ -95,4 +125,4 @@ const Explore = () => {
   );
 };
 
-export default Explore;
+export default EventsPage;
