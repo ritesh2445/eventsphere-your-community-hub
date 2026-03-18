@@ -32,9 +32,10 @@ interface LocalImage {
 export interface RegFieldConfig {
   id: string;
   label: string;
-  type: "text" | "email" | "tel" | "number";
+  type: "text" | "email" | "tel" | "number" | "select" | "checkbox";
   required: boolean;
   placeholder: string;
+  options?: string[]; // For select type
 }
 
 const DEFAULT_REG_FIELDS: RegFieldConfig[] = [
@@ -334,14 +335,42 @@ export const CreateEventDialog = ({ onEventCreated }: CreateEventDialogProps) =>
                       <div className="space-y-1">
                         <label className="text-[9px] text-muted-foreground font-medium uppercase">Type</label>
                         <select className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs"
-                          value={field.type} onChange={(e) => updateRegField(index, { type: e.target.value as any })}>
+                          value={field.type} onChange={(e) => updateRegField(index, { type: e.target.value as any, options: e.target.value === "select" ? [""] : undefined })}>
                           <option value="text">Text</option>
                           <option value="email">Email</option>
                           <option value="tel">Phone</option>
                           <option value="number">Number</option>
+                          <option value="select">Dropdown</option>
+                          <option value="checkbox">Checkbox</option>
                         </select>
                       </div>
                     </div>
+
+                    {field.type === "select" && (
+                      <div className="space-y-2 border-t border-border pt-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[9px] text-muted-foreground font-medium uppercase">Options</label>
+                          <Button type="button" variant="ghost" size="sm" className="h-5 text-[9px] px-1 hover:bg-primary/10" 
+                            onClick={() => updateRegField(index, { options: [...(field.options || []), ""] })}>+ Add Option</Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {field.options?.map((opt, optIdx) => (
+                            <div key={optIdx} className="flex gap-1 items-center">
+                              <Input className="h-7 text-[10px]" placeholder={`Option ${optIdx + 1}`} value={opt} 
+                                onChange={(e) => {
+                                  const newOpts = [...(field.options || [])];
+                                  newOpts[optIdx] = e.target.value;
+                                  updateRegField(index, { options: newOpts });
+                                }} />
+                              <button type="button" onClick={() => {
+                                const newOpts = (field.options || []).filter((_, i) => i !== optIdx);
+                                updateRegField(index, { options: newOpts.length ? newOpts : [""] });
+                              }} className="text-muted-foreground hover:text-destructive"><X className="h-3 w-3" /></button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
@@ -373,10 +402,18 @@ export const CreateEventDialog = ({ onEventCreated }: CreateEventDialogProps) =>
                   <div className="rounded-lg border border-dashed border-border p-4 space-y-2.5 bg-muted/30">
                     {regFields.filter(f => f.label.trim()).map(field => (
                       <div key={field.id} className="space-y-1">
-                        <label className="text-[11px] font-medium">
+                        <label className="text-[11px] font-medium flex items-center gap-2">
+                          {field.type === "checkbox" && <input type="checkbox" className="h-3 w-3" disabled />}
                           {field.label} {field.required && <span className="text-destructive">*</span>}
                         </label>
-                        <Input className="h-9 text-xs" placeholder={field.placeholder || field.label} disabled />
+                        {field.type === "select" ? (
+                          <select className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-xs" disabled>
+                            <option value="">Select an option...</option>
+                            {field.options?.map((opt, i) => <option key={i} value={opt}>{opt || `Option ${i+1}`}</option>)}
+                          </select>
+                        ) : field.type !== "checkbox" && (
+                          <Input className="h-9 text-xs" placeholder={field.placeholder || field.label} disabled />
+                        )}
                       </div>
                     ))}
                   </div>

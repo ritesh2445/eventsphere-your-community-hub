@@ -29,11 +29,7 @@ export const TimePicker = ({ value, onChange, placeholder = "Pick time" }: TimeP
 
   const formatDisplay = (time: string) => {
     if (!time) return null;
-    const [h, m] = time.split(":");
-    const hour = parseInt(h);
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const h12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    return `${h12}:${m} ${ampm}`;
+    return time; // Already in 24h format "HH:MM"
   };
 
   return (
@@ -59,24 +55,21 @@ export const TimePicker = ({ value, onChange, placeholder = "Pick time" }: TimeP
               <p className="text-[10px] text-muted-foreground font-medium text-center">Hour</p>
               <div className="max-h-[180px] overflow-y-auto space-y-0.5 pr-1 scrollbar-none">
                 {HOURS.map(h => {
-                  const hour = parseInt(h);
-                  const ampm = hour >= 12 ? "PM" : "AM";
-                  const h12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-                  return (
-                    <button
-                      key={h}
-                      type="button"
-                      onClick={() => handleSelect(h, selectedMin || "00")}
-                      className={cn(
-                        "w-full text-xs py-1.5 px-2 rounded-md text-left transition-colors",
-                        selectedHour === h
-                          ? "bg-primary text-primary-foreground font-semibold"
-                          : "hover:bg-muted text-muted-foreground"
-                      )}
-                    >
-                      {h12} {ampm}
-                    </button>
-                  );
+                    return (
+                      <button
+                        key={h}
+                        type="button"
+                        onClick={() => handleSelect(h, selectedMin || "00")}
+                        className={cn(
+                          "w-full text-xs py-1.5 px-2 rounded-md text-left transition-colors",
+                          selectedHour === h
+                            ? "bg-primary text-primary-foreground font-semibold"
+                            : "hover:bg-muted text-muted-foreground"
+                        )}
+                      >
+                        {h}
+                      </button>
+                    );
                 })}
               </div>
             </div>
