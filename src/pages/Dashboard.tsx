@@ -77,7 +77,7 @@ const Dashboard = () => {
     return matchesSearch && matchesFilter;
   });
 
-  const isOrganizer = userRole === "organizer";
+  const isOrganizer = userRole === "organizer" || userRole === "admin";
   const isAttendee = userRole === "attendee";
 
 
