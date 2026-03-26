@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { getEvents, Event, registerForEvent, getRegistrations, cancelRegistration } from "@/lib/store";
+import { getEvents, Event, registerForEvent, getRegistrations, cancelRegistration, calculateStatus } from "@/lib/store";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -86,9 +86,9 @@ const EventDetail = () => {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [images.length, paused]);
 
-  const loadData = async () => {
+  const loadData = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const allEvents = await getEvents();
       const found = allEvents.find((e) => e.id === id);
       setEvent(found || null);
@@ -102,7 +102,7 @@ const EventDetail = () => {
     } catch (error) {
       console.error("EventDetail load error:", error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -127,7 +127,12 @@ const EventDetail = () => {
     if (result.success) {
       toast({ title: "Registration successful! 🎉", description: "You're registered. See you there!" });
       setIsRegistered(true);
-      loadData();
+      setEvent(prev => {
+        if (!prev) return prev;
+        const newAttendees = prev.attendees + 1;
+        const newStatus = prev.status !== "pending" ? calculateStatus({ ...prev, attendees: newAttendees }) : prev.status;
+        return { ...prev, attendees: newAttendees, status: newStatus };
+      });
     } else {
       toast({ title: "Registration failed", description: result.error, variant: "destructive" });
     }
@@ -162,7 +167,11 @@ const EventDetail = () => {
   const ticketsLeft = event.capacity - event.attendees;
 
   const eventDate = event.date ? new Date(event.date) : new Date();
-  const diffDays = (eventDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+  const now = new Date();
+  eventDate.setHours(0,0,0,0);
+  now.setHours(0,0,0,0);
+  const diffTime = eventDate.getTime() - now.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
   const isCancelable = diffDays >= 2;
 
   const handleCancel = async () => {
@@ -174,7 +183,12 @@ const EventDetail = () => {
     if (result.success) {
       toast({ title: "Registration cancelled", description: "You have successfully cancelled your registration." });
       setIsRegistered(false);
-      loadData();
+      setEvent(prev => {
+        if (!prev) return prev;
+        const newAttendees = Math.max(0, prev.attendees - 1);
+        const newStatus = prev.status !== "pending" ? calculateStatus({ ...prev, attendees: newAttendees }) : prev.status;
+        return { ...prev, attendees: newAttendees, status: newStatus };
+      });
     } else {
       toast({ title: "Cancellation failed", description: result.error, variant: "destructive" });
     }

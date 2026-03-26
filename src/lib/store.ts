@@ -54,9 +54,9 @@ export const calculateStatus = (event: Partial<Event>): EventStatus => {
     if (diffDays <= 3 && diffDays >= 0) isLive = true;
   }
 
-  if (event.attendees && event.capacity && event.attendees >= event.capacity) return "sold-out";
+  if (event.capacity && event.attendees !== undefined && event.attendees >= event.capacity) return "sold-out";
   
-  return isLive ? "live" : ((event.status as EventStatus) || "upcoming");
+  return isLive ? "live" : "upcoming";
 };
 
 export const uploadImage = async (file: File): Promise<{ url: string | null; error: string | null }> => {
@@ -241,7 +241,7 @@ export const registerForEvent = async (eventId: string, userId: string) => {
 
     // Get current event data
     const eventRes = await withTimeout<any>(
-      (supabase.from("events").select("attendees, capacity").eq("id", eventId).single()) as any
+      (supabase.from("events").select("attendees, capacity, date, status").eq("id", eventId).single()) as any
     );
     const event = eventRes.data;
     if (eventRes.error || !event) return { error: "Event not found" };
@@ -255,10 +255,15 @@ export const registerForEvent = async (eventId: string, userId: string) => {
 
     // Update attendee count
     const newAttendees = (event.attendees || 0) + 1;
+    let newStatus = event.status;
+    if (event.status !== "pending") {
+      newStatus = calculateStatus({ date: event.date, attendees: newAttendees, capacity: event.capacity, status: event.status });
+    }
+
     const updateRes = await withTimeout<any>(
       (supabase.from("events").update({
         attendees: newAttendees,
-        status: newAttendees >= event.capacity ? "sold-out" : "upcoming"
+        status: newStatus
       }).eq("id", eventId)) as any
     );
     if (updateRes.error) return { error: updateRes.error.message };
@@ -282,8 +287,10 @@ export const cancelRegistration = async (eventId: string, userId: string) => {
     if (event.date) {
       const eventDate = new Date(event.date);
       const now = new Date();
+      eventDate.setHours(0,0,0,0);
+      now.setHours(0,0,0,0);
       const diffTime = eventDate.getTime() - now.getTime();
-      const diffDays = diffTime / (1000 * 60 * 60 * 24);
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
       
       if (diffDays < 2) {
         return { error: "You can only cancel 2 or more days before the event." };
