@@ -20,7 +20,7 @@ const EventsPage = () => {
       try {
         const allEvents = await getEvents();
         // Visible events (not pending)
-        const visible = allEvents.filter(e => e.status !== "pending");
+        const visible = allEvents.filter(e => e.status !== "pending" && e.status !== "past");
         setEvents(visible);
       } catch (error) {
         console.error("Events fetch error:", error);

@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type EventStatus = "live" | "upcoming" | "sold-out" | "pending";
+export type EventStatus = "live" | "upcoming" | "sold-out" | "pending" | "past";
 
 export interface Event {
   id: string;
@@ -37,19 +37,26 @@ const withTimeout = <T>(promise: Promise<T>, timeoutMs: number = 4000): Promise<
 // Helper to determine status based on date and attendees
 export const calculateStatus = (event: Partial<Event>): EventStatus => {
   if (event.status === "pending") return "pending";
-  if (event.attendees && event.capacity && event.attendees >= event.capacity) return "sold-out";
+  
+  let isLive = false;
   
   if (event.date) {
     const eventDate = new Date(event.date);
     const now = new Date();
-    const diffTime = eventDate.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const eDate = new Date(eventDate);
+    eDate.setHours(0,0,0,0);
+    const today = new Date(now);
+    today.setHours(0,0,0,0);
+    const diffTime = eDate.getTime() - today.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     
-    if (diffDays <= 3 && diffDays >= 0) return "live";
-    if (diffDays > 3) return "upcoming";
+    if (diffDays < 0) return "past";
+    if (diffDays <= 3 && diffDays >= 0) isLive = true;
   }
+
+  if (event.attendees && event.capacity && event.attendees >= event.capacity) return "sold-out";
   
-  return (event.status as EventStatus) || "upcoming";
+  return isLive ? "live" : ((event.status as EventStatus) || "upcoming");
 };
 
 export const uploadImage = async (file: File): Promise<{ url: string | null; error: string | null }> => {
@@ -260,6 +267,57 @@ export const registerForEvent = async (eventId: string, userId: string) => {
   } catch (err: any) {
     console.error("registerForEvent error:", err);
     return { error: err.message || "Registration failed" };
+  }
+};
+
+export const cancelRegistration = async (eventId: string, userId: string) => {
+  try {
+    // Get current event data
+    const eventRes = await withTimeout<any>(
+      (supabase.from("events").select("date, attendees, capacity, status").eq("id", eventId).single()) as any
+    );
+    const event = eventRes.data;
+    if (eventRes.error || !event) return { error: "Event not found" };
+
+    if (event.date) {
+      const eventDate = new Date(event.date);
+      const now = new Date();
+      const diffTime = eventDate.getTime() - now.getTime();
+      const diffDays = diffTime / (1000 * 60 * 60 * 24);
+      
+      if (diffDays < 2) {
+        return { error: "You can only cancel 2 or more days before the event." };
+      }
+    }
+
+    // Delete registration
+    const deleteRes = await withTimeout<any>(
+      (supabase.from("registrations")
+        .delete()
+        .eq("event_id", eventId)
+        .eq("user_id", userId)) as any
+    );
+    if (deleteRes.error) return { error: deleteRes.error.message };
+
+    // Update attendee count
+    const newAttendees = Math.max(0, (event.attendees || 0) - 1);
+    let newStatus = event.status;
+    if (event.status !== "pending") {
+      newStatus = newAttendees >= event.capacity ? "sold-out" : calculateStatus({ date: event.date, attendees: newAttendees, capacity: event.capacity, status: event.status });
+    }
+
+    const updateRes = await withTimeout<any>(
+      (supabase.from("events").update({
+        attendees: newAttendees,
+        status: newStatus
+      }).eq("id", eventId)) as any
+    );
+    if (updateRes.error) return { error: updateRes.error.message };
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("cancelRegistration error:", err);
+    return { error: err.message || "Cancellation failed" };
   }
 };
 

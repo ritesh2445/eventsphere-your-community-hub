@@ -11,7 +11,7 @@ interface EventCardProps {
   capacity: number;
   image: string;
   category: string;
-  status: "live" | "upcoming" | "sold-out" | "pending";
+  status: "live" | "upcoming" | "sold-out" | "pending" | "past";
 }
 
 const EventCard = ({
@@ -52,6 +52,8 @@ const EventCard = ({
                 ? "bg-destructive/10 text-destructive"
                 : status === "pending"
                 ? "bg-warning/10 text-warning"
+                : status === "past"
+                ? "bg-muted text-muted-foreground line-through"
                 : "bg-secondary text-muted-foreground"
             }`}>
               {status}

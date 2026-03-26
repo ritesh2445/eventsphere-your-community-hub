@@ -46,7 +46,7 @@ const Index = () => {
       try {
         const all = await getEvents();
         const trending = all
-          .filter(e => e.status !== "pending")
+          .filter(e => e.status !== "pending" && e.status !== "past")
           .slice(0, 3);
         setEvents(trending);
       } catch (error) {

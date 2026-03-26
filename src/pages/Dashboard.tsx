@@ -165,97 +165,111 @@ const Dashboard = () => {
                   <option value="live">Live</option>
                   <option value="upcoming">Upcoming</option>
                   <option value="sold-out">Sold Out</option>
+                  <option value="past">Past</option>
                   {isOrganizer && <option value="pending">Pending</option>}
                 </select>
               </div>
             </div>
-            <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[500px]">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/30">
-                      <th className="text-left text-xs font-bold uppercase tracking-wider text-muted-foreground px-4 py-3">Event</th>
-                      <th className="text-left text-xs font-bold uppercase tracking-wider text-muted-foreground px-4 py-3 hidden sm:table-cell">Date</th>
-                      <th className="text-left text-xs font-bold uppercase tracking-wider text-muted-foreground px-4 py-3 hidden md:table-cell">
-                        {isOrganizer ? "Attendees" : "Location"}
-                      </th>
-                      <th className="text-center text-xs font-bold uppercase tracking-wider text-muted-foreground px-4 py-3">Status</th>
-                      {isOrganizer && (
-                        <th className="text-right text-xs font-bold uppercase tracking-wider text-muted-foreground px-4 py-3">Actions</th>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {loading ? (
-                      <tr>
-                        <td colSpan={5} className="px-4 py-20 text-center">
-                          <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary/40" />
-                        </td>
-                      </tr>
-                    ) : filteredEvents.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="px-4 py-12 text-center text-sm text-muted-foreground">
-                          {events.length === 0 
-                            ? (isOrganizer ? "No events found. Start by creating one!" : "You haven't registered for any events yet.")
-                            : "No matching events found."}
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredEvents.map((event) => (
-                        <tr key={event.id} className="hover:bg-muted/30 transition-colors group">
-                          <td className="px-4 py-4">
-                            <Link to={`/event/${event.id}`} className="text-sm font-semibold hover:text-primary transition-colors flex items-center gap-2">
-                              {event.title}
-                            </Link>
-                          </td>
-                          <td className="px-4 py-4 text-[11px] text-muted-foreground font-medium hidden sm:table-cell">
-                            {event.date}
-                          </td>
-                          <td className="px-4 py-4 text-[11px] text-muted-foreground hidden md:table-cell">
-                            {isOrganizer ? (
-                              <div className="flex items-center gap-2">
-                                <div className="w-16 h-1.5 bg-secondary rounded-full overflow-hidden">
-                                  <div 
-                                    className="h-full bg-primary" 
-                                    style={{ width: `${event.capacity > 0 ? (event.attendees / event.capacity) * 100 : 0}%` }}
-                                  />
-                                </div>
-                                <span>{event.attendees}/{event.capacity}</span>
-                              </div>
-                            ) : event.location}
-                          </td>
-                          <td className="px-4 py-4 text-center">
-                            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-tighter ${
-                              event.status === "live"
-                                ? "bg-success/10 text-success border border-success/20"
-                                : event.status === "sold-out"
-                                ? "bg-destructive/10 text-destructive border border-destructive/20"
-                                : event.status === "pending"
-                                ? "bg-warning/10 text-warning border border-warning/20"
-                                : "bg-primary/10 text-primary border border-primary/20"
-                            }`}>
-                              {event.status}
-                            </span>
-                          </td>
-                          {isOrganizer && (
-                            <td className="px-4 py-4 text-right">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-8 gap-1.5 text-xs"
-                                onClick={() => handleViewRegistrations(event)}
-                              >
-                                <Eye className="h-3.5 w-3.5" /> Registrations
-                              </Button>
-                            </td>
+            
+            {
+              [
+                { title: isOrganizer ? "Active Events" : "Upcoming & Live Events", data: filteredEvents.filter(e => e.status !== "past") },
+                { title: isOrganizer ? "Past Hosted Events" : "Events registered previously", data: filteredEvents.filter(e => e.status === "past") }
+              ].filter(section => section.data.length > 0 || section.title.includes("Active") || section.title.includes("Upcoming")).map((section, idx) => (
+                <div key={idx} className="space-y-3 mt-6">
+                  <h3 className="text-sm font-semibold text-muted-foreground ml-1">{section.title}</h3>
+                  <div className={`rounded-xl border border-border bg-card overflow-hidden shadow-sm ${section.title.includes("Past") || section.title.includes("previously") ? "opacity-75" : ""}`}>
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[500px]">
+                        <thead>
+                          <tr className="border-b border-border bg-muted/30">
+                            <th className="text-left text-xs font-bold uppercase tracking-wider text-muted-foreground px-4 py-3">Event</th>
+                            <th className="text-left text-xs font-bold uppercase tracking-wider text-muted-foreground px-4 py-3 hidden sm:table-cell">Date</th>
+                            <th className="text-left text-xs font-bold uppercase tracking-wider text-muted-foreground px-4 py-3 hidden md:table-cell">
+                              {isOrganizer ? "Attendees" : "Location"}
+                            </th>
+                            <th className="text-center text-xs font-bold uppercase tracking-wider text-muted-foreground px-4 py-3">Status</th>
+                            {isOrganizer && (
+                              <th className="text-right text-xs font-bold uppercase tracking-wider text-muted-foreground px-4 py-3">Actions</th>
+                            )}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {loading ? (
+                            <tr>
+                              <td colSpan={5} className="px-4 py-20 text-center">
+                                <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary/40" />
+                              </td>
+                            </tr>
+                          ) : section.data.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                                {events.length === 0 
+                                  ? (isOrganizer ? "No events found. Start by creating one!" : "You haven't registered for any events yet.")
+                                  : "No matching events found in this category."}
+                              </td>
+                            </tr>
+                          ) : (
+                            section.data.map((event) => (
+                              <tr key={event.id} className="hover:bg-muted/30 transition-colors group">
+                                <td className="px-4 py-4">
+                                  <Link to={`/event/${event.id}`} className="text-sm font-semibold hover:text-primary transition-colors flex items-center gap-2">
+                                    {event.title}
+                                  </Link>
+                                </td>
+                                <td className="px-4 py-4 text-[11px] text-muted-foreground font-medium hidden sm:table-cell">
+                                  {event.date}
+                                </td>
+                                <td className="px-4 py-4 text-[11px] text-muted-foreground hidden md:table-cell">
+                                  {isOrganizer ? (
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-16 h-1.5 bg-secondary rounded-full overflow-hidden">
+                                        <div 
+                                          className="h-full bg-primary" 
+                                          style={{ width: `${event.capacity > 0 ? (event.attendees / event.capacity) * 100 : 0}%` }}
+                                        />
+                                      </div>
+                                      <span>{event.attendees}/{event.capacity}</span>
+                                    </div>
+                                  ) : event.location}
+                                </td>
+                                <td className="px-4 py-4 text-center">
+                                  <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-tighter ${
+                                    event.status === "live"
+                                      ? "bg-success/10 text-success border border-success/20"
+                                      : event.status === "sold-out"
+                                      ? "bg-destructive/10 text-destructive border border-destructive/20"
+                                      : event.status === "pending"
+                                      ? "bg-warning/10 text-warning border border-warning/20"
+                                      : event.status === "past"
+                                      ? "bg-muted text-muted-foreground border border-border line-through"
+                                      : "bg-primary/10 text-primary border border-primary/20"
+                                  }`}>
+                                    {event.status}
+                                  </span>
+                                </td>
+                                {isOrganizer && (
+                                  <td className="px-4 py-4 text-right">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      className="h-8 gap-1.5 text-xs"
+                                      onClick={() => handleViewRegistrations(event)}
+                                    >
+                                      <Eye className="h-3.5 w-3.5" /> Registrations
+                                    </Button>
+                                  </td>
+                                )}
+                              </tr>
+                            ))
                           )}
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              ))
+            }
           </motion.div>
         </div>
       </main>

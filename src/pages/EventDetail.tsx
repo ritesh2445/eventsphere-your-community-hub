@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { getEvents, Event, registerForEvent, getRegistrations } from "@/lib/store";
+import { getEvents, Event, registerForEvent, getRegistrations, cancelRegistration } from "@/lib/store";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -65,6 +65,7 @@ const EventDetail = () => {
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
+  const [canceling, setCanceling] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -159,6 +160,25 @@ const EventDetail = () => {
   }
 
   const ticketsLeft = event.capacity - event.attendees;
+
+  const eventDate = event.date ? new Date(event.date) : new Date();
+  const diffDays = (eventDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+  const isCancelable = diffDays >= 2;
+
+  const handleCancel = async () => {
+    if (!user || !id) return;
+    setCanceling(true);
+    const result = await cancelRegistration(id, user.id);
+    setCanceling(false);
+
+    if (result.success) {
+      toast({ title: "Registration cancelled", description: "You have successfully cancelled your registration." });
+      setIsRegistered(false);
+      loadData();
+    } else {
+      toast({ title: "Cancellation failed", description: result.error, variant: "destructive" });
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -299,14 +319,25 @@ const EventDetail = () => {
                 )}
 
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
-                  <Button size="lg" className="flex-1 active-press text-base font-semibold h-12"
-                    disabled={event.status === "sold-out" || isRegistered || registering}
-                    onClick={handleRegister}>
-                    {registering ? <Loader2 className="h-5 w-5 animate-spin" />
-                      : isRegistered ? "Already Registered ✓"
-                      : event.status === "sold-out" ? "Sold Out"
-                      : "Register Now"}
-                  </Button>
+                  {isRegistered ? (
+                    <Button size="lg" className="flex-1 text-base font-semibold h-12"
+                      variant="destructive"
+                      disabled={!isCancelable || canceling}
+                      onClick={handleCancel}
+                      title={!isCancelable ? "Cancellation is only allowed 2 or more days before the event" : ""}
+                    >
+                      {canceling ? <Loader2 className="h-5 w-5 animate-spin" /> : "Cancel Registration"}
+                    </Button>
+                  ) : (
+                    <Button size="lg" className="flex-1 active-press text-base font-semibold h-12"
+                      disabled={event.status === "sold-out" || event.status === "past" || registering}
+                      onClick={handleRegister}>
+                      {registering ? <Loader2 className="h-5 w-5 animate-spin" />
+                        : event.status === "sold-out" ? "Sold Out"
+                        : event.status === "past" ? "Event Ended"
+                        : "Register Now"}
+                    </Button>
+                  )}
                   <Button variant="outline" size="lg" className="gap-2 h-12" onClick={() => {
                     navigator.clipboard.writeText(window.location.href);
                     toast({ title: "Link copied!", description: "Share this event with your network." });
@@ -316,7 +347,9 @@ const EventDetail = () => {
                 </div>
 
                 <p className="text-[11px] text-muted-foreground text-center">
-                  By registering, you agree to share your details with the event organizer.
+                  {isRegistered && !isCancelable 
+                    ? "You can only cancel your registration 2 or more days before the event."
+                    : "By registering, you agree to share your details with the event organizer."}
                 </p>
               </div>
             </div>
