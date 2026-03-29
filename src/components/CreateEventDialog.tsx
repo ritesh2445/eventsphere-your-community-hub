@@ -65,6 +65,7 @@ export const CreateEventDialog = ({ onEventCreated }: CreateEventDialogProps) =>
   const [formData, setFormData] = useState({
     title: "",
     date: "",
+    endDate: "",
     startTime: "",
     endTime: "",
     location: "",
@@ -155,6 +156,7 @@ export const CreateEventDialog = ({ onEventCreated }: CreateEventDialogProps) =>
       // Embed metadata in description
       const meta = {
         timing: { start: formData.startTime, end: formData.endTime },
+        endDate: formData.endDate || undefined,
         regFields: validFields,
       };
       const descWithMeta = `${formData.description}\n<!--EVENTSPHERE_META:${JSON.stringify(meta)}-->`;
@@ -176,7 +178,7 @@ export const CreateEventDialog = ({ onEventCreated }: CreateEventDialogProps) =>
       setIsCustomCategory(false);
       setRegFields([...DEFAULT_REG_FIELDS]);
       setActiveSection("details");
-      setFormData({ title: "", date: "", startTime: "", endTime: "", location: "", capacity: 100, category: "Technology", description: "" });
+      setFormData({ title: "", date: "", endDate: "", startTime: "", endTime: "", location: "", capacity: 100, category: "Technology", description: "" });
     } catch (error: any) {
       console.error("Event creation failed:", error);
       toast({ title: "Error Creating Event", description: error?.message || "Failed to create event.", variant: "destructive" });
@@ -214,19 +216,35 @@ export const CreateEventDialog = ({ onEventCreated }: CreateEventDialogProps) =>
                 <Input placeholder="e.g. Web3 Innovation Summit" required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Date</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10 px-3", !formData.date && "text-muted-foreground")}>
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.date ? format(new Date(formData.date), "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={formData.date ? new Date(formData.date) : undefined} onSelect={(d) => setFormData({ ...formData, date: d ? d.toISOString() : "" })} disabled={(d) => d < new Date(new Date().setHours(0,0,0,0))} initialFocus />
-                  </PopoverContent>
-                </Popover>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Start Date</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10 px-3", !formData.date && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.date ? format(new Date(formData.date + "T00:00:00"), "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={formData.date ? new Date(formData.date + "T00:00:00") : undefined} onSelect={(d) => setFormData({ ...formData, date: d ? format(d, "yyyy-MM-dd") : "" })} disabled={(d) => d < new Date(new Date().setHours(0,0,0,0))} initialFocus />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">End Date (Optional)</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10 px-3", !formData.endDate && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.endDate ? format(new Date(formData.endDate + "T00:00:00"), "PPP") : <span>Optional</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={formData.endDate ? new Date(formData.endDate + "T00:00:00") : undefined} onSelect={(d) => setFormData({ ...formData, endDate: d ? format(d, "yyyy-MM-dd") : "" })} disabled={(d) => d < new Date(formData.date ? formData.date + "T00:00:00" : new Date().setHours(0,0,0,0))} initialFocus />
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

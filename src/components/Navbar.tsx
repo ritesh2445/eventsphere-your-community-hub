@@ -27,6 +27,7 @@ const Navbar = () => {
   const menuItems = [
     { label: "Home", path: "/" },
     { label: "Events", path: "/events" },
+    { label: "Contact", path: "/contact" },
     { label: "Dashboard", path: "/dashboard", protected: true },
     { label: "Admin", path: "/admin", role: "admin" as const },
   ];

@@ -3,7 +3,8 @@ import { useState, useEffect } from "react";
 import { Shield, CheckCircle, XCircle, Users, ExternalLink, Calendar, MapPin, Tag, Clock, Loader2, Trash2, Eye, AlertTriangle } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import StatCard from "@/components/StatCard";
-import { getEvents, updateEventStatus, deleteEvent, Event, getPlatformStats } from "@/lib/store";
+import { getEvents, updateEventStatus, deleteEvent, Event, getPlatformStats, getEventRegistrations, EventRegistrant } from "@/lib/store";
+import LivePolls from "@/components/events/LivePolls";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -17,6 +18,7 @@ import {
 
 interface EventMeta {
   timing?: { start: string; end: string };
+  endDate?: string;
   regFields?: { id: string; label: string; type: string; required: boolean; placeholder: string }[];
 }
 
@@ -45,6 +47,8 @@ const Admin = () => {
   const [stats, setStats] = useState({ users: 0, events: 0 });
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [registrants, setRegistrants] = useState<EventRegistrant[]>([]);
+  const [loadingRegs, setLoadingRegs] = useState(false);
   const [activeTab, setActiveTab] = useState<"pending" | "all">("pending");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const { toast } = useToast();
@@ -63,6 +67,17 @@ const Admin = () => {
   };
 
   useEffect(() => { loadEvents(); }, []);
+
+  useEffect(() => {
+    if (selectedEvent) {
+      setLoadingRegs(true);
+      getEventRegistrations(selectedEvent.id)
+        .then(regs => setRegistrants(regs))
+        .finally(() => setLoadingRegs(false));
+    } else {
+      setRegistrants([]);
+    }
+  }, [selectedEvent]);
 
   const pendingEvents = allEvents.filter(e => e.status === "pending");
   const displayEvents = activeTab === "pending" ? pendingEvents : allEvents;
@@ -229,7 +244,7 @@ const Admin = () => {
                                       <div className="grid grid-cols-2 gap-3">
                                         <div className="space-y-1"><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Title</p><p className="text-sm font-semibold">{selectedEvent.title}</p></div>
                                         <div className="space-y-1"><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Capacity</p><p className="text-sm font-semibold">{selectedEvent.attendees} / {selectedEvent.capacity} Attendees</p></div>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground"><Calendar className="h-3.5 w-3.5 shrink-0" /> {selectedEvent.date}</div>
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground"><Calendar className="h-3.5 w-3.5 shrink-0" /> {selectedEvent.date}{selectedMeta.meta.endDate && ` — ${new Date(selectedMeta.meta.endDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}`}</div>
                                         <div className="flex items-center gap-2 text-xs text-muted-foreground"><MapPin className="h-3.5 w-3.5 shrink-0" /> {selectedEvent.location}</div>
                                       </div>
 
@@ -268,6 +283,42 @@ const Admin = () => {
                                           <p className="text-[11px] font-bold">Organizer</p>
                                           <p className="text-[10px] text-muted-foreground font-mono">ID: {selectedEvent.organizerId || "Unknown"}</p>
                                         </div>
+                                      </div>
+
+                                      {/* Registrations List */}
+                                      <div className="space-y-2 pt-3 border-t border-border">
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Registrations ({registrants.length})</p>
+                                        {loadingRegs ? (
+                                          <Loader2 className="h-4 w-4 animate-spin text-primary/50" />
+                                        ) : registrants.length === 0 ? (
+                                          <p className="text-xs text-muted-foreground">No registrations yet.</p>
+                                        ) : (
+                                          <div className="max-h-[150px] overflow-y-auto rounded-md border border-border bg-card">
+                                            <table className="w-full text-xs">
+                                              <thead className="bg-muted/50 text-muted-foreground sticky top-0">
+                                                <tr>
+                                                  <th className="px-3 py-1.5 text-left font-medium">Name</th>
+                                                  <th className="px-3 py-1.5 text-left font-medium">Registered At</th>
+                                                </tr>
+                                              </thead>
+                                              <tbody className="divide-y divide-border">
+                                                {registrants.map((reg) => (
+                                                  <tr key={reg.id}>
+                                                    <td className="px-3 py-1.5 truncate">{reg.fullName}</td>
+                                                    <td className="px-3 py-1.5 opacity-70">
+                                                      {reg.registeredAt ? new Date(reg.registeredAt).toLocaleDateString() : ""}
+                                                    </td>
+                                                  </tr>
+                                                ))}
+                                              </tbody>
+                                            </table>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Live Polls Embed */}
+                                      <div className="pt-3 border-t border-border">
+                                        <LivePolls eventId={selectedEvent.id} isOrganizer={true} />
                                       </div>
 
                                       {/* Actions */}

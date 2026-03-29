@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import { getEvents, Event, registerForEvent, getRegistrations, cancelRegistration, calculateStatus } from "@/lib/store";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import LivePolls from "@/components/events/LivePolls";
 
 interface RegFieldConfig {
   id: string;
@@ -20,6 +21,7 @@ interface RegFieldConfig {
 
 interface EventMeta {
   timing?: { start: string; end: string };
+  endDate?: string;
   regFields?: RegFieldConfig[];
 }
 
@@ -261,7 +263,13 @@ const EventDetail = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card/50">
                 <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><Calendar className="h-4 w-4 text-primary" /></div>
-                <div><p className="text-[10px] text-muted-foreground font-medium uppercase">Date</p><p className="text-sm font-semibold">{event.date}</p></div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground font-medium uppercase">Date</p>
+                  <p className="text-sm font-semibold">
+                    {event.date}
+                    {meta.endDate && ` — ${new Date(meta.endDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`}
+                  </p>
+                </div>
               </div>
               {meta.timing && (
                 <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card/50">
@@ -285,6 +293,11 @@ const EventDetail = () => {
               <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed whitespace-pre-wrap">
                 {cleanDesc}
               </div>
+            </div>
+
+            {/* Live Polls */}
+            <div className="space-y-4 border-t border-border pt-6">
+               <LivePolls eventId={event.id} isOrganizer={user?.id === event.organizerId} />
             </div>
 
             {/* Registration Section with dynamic fields */}

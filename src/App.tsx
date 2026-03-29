@@ -10,6 +10,7 @@ import EventDetail from "./pages/EventDetail";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
 import AuthPage from "./pages/AuthPage";
+import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SecurityProvider from "./components/SecurityProvider";
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/events" element={<Explore />} />
             <Route path="/explore" element={<Explore />} />
             <Route path="/event/:id" element={<EventDetail />} />
+            <Route path="/contact" element={<Contact />} />
             
             {/* Protected Routes */}
             <Route 
